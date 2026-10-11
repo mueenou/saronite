@@ -218,6 +218,7 @@ const printSheet = ref<{ exportPdf: () => Promise<void> } | null>(null)
     <p v-if="!board" class="panel empty-state">The permanent loot board will appear here when a guild officer opens this page.</p>
 
     <section v-if="board" class="board-content">
+      <WeakAuraPanel v-if="canEdit && board.status === 'active'" />
       <div v-if="canEdit && board.status === 'active'" class="add-item panel">
         <h2>Add loot</h2>
         <form @submit.prevent="createItem">
