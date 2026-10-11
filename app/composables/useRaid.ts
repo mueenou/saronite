@@ -192,7 +192,7 @@ export function useRaid() {
     const guildId = membership.value?.guild.id
     if (!supabase || !guildId || !activeRaidId.value || !canEdit.value) return
     const id = activeRaidId.value
-    const snapshot = structuredClone(state.value)
+    const snapshot = JSON.parse(JSON.stringify(state.value)) as typeof state.value
     apiStatus.value = 'saving'
     apiError.value = null
 
