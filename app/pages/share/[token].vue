@@ -315,7 +315,7 @@ onMounted(async () => {
 .public-loot { display: grid; gap: 12px; }
 .public-table-wrap { max-width: 100%; overflow-x: auto; padding: 0; }
 .loot-table { width: 100%; min-width: 760px; border-collapse: collapse; text-align: left; font-size: .9rem; }
-.loot-table th, .loot-table td { padding: 8px 10px; border-bottom: 1px solid var(--ice-ridge); vertical-align: top; }
+.loot-table th, .loot-table td { padding: 8px 10px; border-bottom: 1px solid var(--ice-ridge); vertical-align: middle; }
 .loot-table th { background: var(--ice-shelf); color: var(--fog); font-weight: 500; white-space: nowrap; }
 .loot-table tbody tr:nth-child(even) { background: rgba(168, 216, 234, .03); }
 .loot-table tbody tr:last-child td { border-bottom: 0; }
