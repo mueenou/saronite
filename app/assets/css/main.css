@@ -1,0 +1,87 @@
+/* Saronite: palette drawn from Northrend glacier ice and saronite ore */
+:root {
+  --ice-deep: #0E1C26;     /* page */
+  --ice-shelf: #162A37;    /* panels */
+  --ice-ridge: #213C4D;    /* raised surfaces, borders */
+  --frost: #A8D8EA;        /* primary accent */
+  --rime: #DDE9EE;         /* text */
+  --fog: #8DA5B2;          /* secondary text */
+  --saronite: #7A6BB0;     /* selection, focus */
+  --ok: #7CC48A;
+  --partial: #E0B95C;
+  --missing: #D96A5B;
+
+  --font-display: 'Marcellus', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-body: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+
+  --r-sm: 4px;
+  --r-md: 8px;
+  --gap: 16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  background:
+    radial-gradient(1200px 500px at 70% -10%, rgba(168, 216, 234, 0.08), transparent 60%),
+    var(--ice-deep);
+  color: var(--rime);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+button, input, select { font: inherit; color: inherit; }
+
+button {
+  cursor: pointer;
+  background: var(--ice-ridge);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 6px 12px;
+}
+button:hover { border-color: var(--fog); }
+button.primary { background: var(--frost); color: var(--ice-deep); font-weight: 700; }
+button.quiet { background: transparent; color: var(--fog); }
+button.quiet:hover { color: var(--rime); }
+
+input, select {
+  background: var(--ice-deep);
+  border: 1px solid var(--ice-ridge);
+  border-radius: var(--r-sm);
+  padding: 6px 8px;
+  min-width: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--saronite);
+  outline-offset: 2px;
+}
+
+.panel {
+  background: var(--ice-shelf);
+  border: 1px solid var(--ice-ridge);
+  border-radius: var(--r-md);
+  padding: var(--gap);
+}
+
+.muted { color: var(--fog); }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
