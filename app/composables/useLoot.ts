@@ -380,26 +380,6 @@ export function useLoot() {
     } catch (cause) { setError(cause) } finally { isBusy.value = false }
   }
 
-  async function importWeakAuraAwards(entries: { itemId: string, playerId: string, round: number, override: boolean }[], finalRound: number) {
-    if (!supabase || !membership.value || !board.value || !canEdit.value) return false
-    isBusy.value = true
-    error.value = null
-    try {
-      const { error: rpcError } = await supabase.rpc('import_weakaura_loot', {
-        p_guild_id: membership.value.guild.id,
-        p_board_id: board.value.id,
-        p_awards: entries,
-        p_final_round: finalRound
-      })
-      if (rpcError) throw rpcError
-      await loadBoardData(board.value.id)
-      return true
-    } catch (cause) {
-      setError(cause)
-      return false
-    } finally { isBusy.value = false }
-  }
-
   function candidatesForItem(itemId: string) {
     return candidates.value.filter(candidate => candidate.itemId === itemId)
       .sort((a, b) => a.priority - b.priority)
@@ -423,7 +403,7 @@ export function useLoot() {
   return {
     board, items, candidates, awards, isLoading, isBusy, error, pendingEligible, hasWaitingLoot,
     initialize, retry, addItem, removeItem, renameItem, addCandidate, removeCandidate,
-    setCandidateStatus, reorderCandidates, award, advanceRound, voidAward, importWeakAuraAwards,
+    setCandidateStatus, reorderCandidates, award, advanceRound, voidAward,
     candidatesForItem, eligibleCandidates, awardCount, awardsForItem
   }
 }
