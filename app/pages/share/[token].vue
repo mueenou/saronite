@@ -329,7 +329,7 @@ onMounted(async () => {
 .priority-list li.passed strong { opacity: .55; text-decoration: line-through; }
 .priority-list strong.tied { position: relative; }
 .priority-list strong.tied::after { content: 'roll'; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); color: var(--fog); font-size: .68rem; font-weight: 400; line-height: 1; }
-.rank { color: var(--fog); font-size: .8rem; }
+.rank { color: var(--rime); font-size: .9rem; font-weight: 700; }
 .rank::after { content: '.'; }
 .history-list { list-style: none; display: grid; gap: 5px; min-width: 200px; margin: 6px 0 0; padding: 0; }
 .history-list li { display: grid; gap: 2px; }
