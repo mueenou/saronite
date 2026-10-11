@@ -236,7 +236,7 @@ onMounted(async () => {
                   <ol class="priority-list">
                     <li v-for="candidate in [...item.candidates].sort((a, b) => a.priority - b.priority)" :key="candidate.playerId" :class="{ passed: candidate.status === 'passed' }">
                       <span class="rank">{{ candidate.priority }}</span>
-                      <strong :style="{ color: playerColor(candidate.playerId) }">{{ playerName(candidate.playerId) }}</strong>
+                      <strong :class="{ tied: item.candidates.filter(other => other.priority === candidate.priority).length > 1 }" :style="{ color: playerColor(candidate.playerId) }">{{ playerName(candidate.playerId) }}</strong>
                       <small v-if="candidate.status === 'passed'" class="muted">Passed</small>
                       <small v-else-if="data.items.flatMap(entry => entry.awards).some(award => award.playerId === candidate.playerId && award.round === data.currentRound && !award.voidedAt)" class="muted">Received</small>
                     </li>
@@ -327,6 +327,8 @@ onMounted(async () => {
 .priority-list { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; }
 .priority-list li { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
 .priority-list li.passed strong { opacity: .55; text-decoration: line-through; }
+.priority-list strong.tied { position: relative; }
+.priority-list strong.tied::after { content: 'roll'; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); color: var(--fog); font-size: .68rem; font-weight: 400; line-height: 1; }
 .rank { color: var(--fog); font-size: .8rem; }
 .rank::after { content: '.'; }
 .history-list { list-style: none; display: grid; gap: 5px; min-width: 200px; margin: 6px 0 0; padding: 0; }
