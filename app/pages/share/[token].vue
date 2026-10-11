@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { CLASS_BY_ID, SPEC_BY_ID } from '~/data/classes'
+import type { RaidState, Role } from '#shared/types'
+import { CLASS_BY_ID, ROLE_LABEL, ROLE_TARGETS, SPEC_BY_ID } from '~/data/classes'
+import { visibleGroupCount } from '~/utils/coverage'
 
 type PublicPlayer = { id: string, name: string, classId: keyof typeof CLASS_BY_ID, specId: string, role: string }
 type PublicCandidate = { playerId: string, priority: number, status: 'active' | 'passed' }
@@ -26,9 +28,11 @@ type PublicItem = {
 type PublicGuildView = {
   guild: { name: string }
   currentRound: number
+  raids: PublicRaid[]
   players: PublicPlayer[]
   items: PublicItem[]
 }
+type PublicRaid = { id: string, title: string, state: RaidState, updatedAt: string }
 
 const route = useRoute()
 const supabase = useNuxtApp().$supabase
@@ -36,6 +40,25 @@ const data = ref<PublicGuildView | null>(null)
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 const tab = ref<'roster' | 'loot'>('roster')
+const raidId = ref<string | null>(null)
+
+const activeRaid = computed(() => {
+  const raids = data.value?.raids ?? []
+  return raids.find(raid => raid.id === raidId.value) ?? raids[0] ?? null
+})
+const characterById = computed(() => new Map((activeRaid.value?.state.roster ?? []).map(character => [character.id, character])))
+const visibleGroups = computed(() => activeRaid.value
+  ? activeRaid.value.state.groups.slice(0, visibleGroupCount(activeRaid.value.state))
+  : [])
+const placedIds = computed(() => new Set(visibleGroups.value.flat().filter((id): id is string => !!id && characterById.value.has(id))))
+const placedCount = computed(() => placedIds.value.size)
+const benchCharacters = computed(() => (activeRaid.value?.state.roster ?? []).filter(character => !placedIds.value.has(character.id)))
+const roleRows = computed(() => (['tank', 'healer', 'melee', 'ranged'] as Role[]).map(role => {
+  const size = activeRaid.value?.state.size ?? 25
+  const count = [...placedIds.value].filter(id => characterById.value.get(id)?.role === role).length
+  const [min, max] = ROLE_TARGETS[size][role]
+  return { role, count, min, max, status: count < min ? 'low' : count > max ? 'high' : 'ok' }
+}))
 
 function playerName(playerId: string) {
   return data.value?.players.find(player => player.id === playerId)?.name ?? playerId
@@ -77,7 +100,7 @@ onMounted(async () => {
     const { data: result, error: rpcError } = await supabase.rpc('get_public_guild_view', { p_token: token })
     if (rpcError) throw rpcError
     if (!result) throw new Error('This public link is invalid or has been revoked.')
-    data.value = result as PublicGuildView
+    data.value = { ...(result as PublicGuildView), raids: (result as PublicGuildView).raids ?? [] }
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : 'Could not load this public guild view.'
   } finally {
@@ -100,11 +123,6 @@ onMounted(async () => {
     </section>
 
     <template v-else-if="data">
-      <div class="guild-title">
-        <h1>{{ data.guild.name }}</h1>
-        <p class="muted">Shared roster and loot priorities</p>
-      </div>
-
       <nav class="public-tabs" aria-label="Shared guild data">
         <button type="button" :class="{ active: tab === 'roster' }" @click="tab = 'roster'">
           Guild roster ({{ data.players.length }})
@@ -114,8 +132,63 @@ onMounted(async () => {
         </button>
       </nav>
 
-      <section v-if="tab === 'roster'" class="public-roster panel">
+      <div class="guild-title">
+        <h1>{{ data.guild.name }}</h1>
+        <p class="muted">Shared roster and loot priorities</p>
+      </div>
+
+      <section v-if="tab === 'roster' && activeRaid" class="public-raid">
+        <div class="raid-heading">
+          <h2>{{ activeRaid.state.title || activeRaid.title || 'Untitled raid' }}</h2>
+          <span class="size-tag">{{ activeRaid.state.size }}-player</span>
+        </div>
+        <ul class="roles" aria-label="Role balance">
+          <li v-for="row in roleRows" :key="row.role" :class="row.status">
+            <RoleIcon :role="row.role" />
+            <span class="count">{{ row.count }}</span>
+            <span class="label">{{ ROLE_LABEL[row.role] }}</span>
+            <span class="target muted">{{ row.min === row.max ? row.min : `${row.min}–${row.max}` }}</span>
+          </li>
+          <li class="total"><span class="count">{{ placedCount }}</span><span class="label">of {{ activeRaid.state.size }}</span></li>
+        </ul>
+        <div v-if="data.raids.length > 1" class="raid-picker">
+          <label for="public-raid">Saved raids</label>
+          <select id="public-raid" v-model="raidId">
+            <option v-for="raid in data.raids" :key="raid.id" :value="raid.id">{{ raid.state.title || raid.title || 'Untitled raid' }}</option>
+          </select>
+        </div>
+
+        <div class="raid-layout">
+          <section class="panel bench">
+            <h3>Bench <span class="muted">{{ benchCharacters.length }}</span></h3>
+            <p v-if="!benchCharacters.length" class="muted">Everyone is in a group.</p>
+            <ul class="slots">
+              <li v-for="character in benchCharacters" :key="character.id"><div class="chip" :style="{ '--class-color': CLASS_BY_ID[character.classId]?.color }"><span class="chip-main"><span class="name">{{ character.name }}</span><span class="spec">{{ SPEC_BY_ID[character.specId]?.name }} {{ CLASS_BY_ID[character.classId]?.name }}</span></span><span class="chip-role"><RoleIcon :role="character.role" /></span></div></li>
+            </ul>
+          </section>
+          <div class="groups">
+            <section v-for="(group, groupIndex) in visibleGroups" :key="groupIndex" class="panel group">
+              <h3>Group {{ groupIndex + 1 }}</h3>
+              <ol class="slots">
+                <li v-for="(id, slot) in group" :key="slot">
+                  <div v-if="id && characterById.get(id)" class="chip" :style="{ '--class-color': CLASS_BY_ID[characterById.get(id)!.classId]?.color }">
+                    <span class="chip-main">
+                      <span class="name">{{ characterById.get(id)!.name }}</span>
+                      <span class="spec">{{ SPEC_BY_ID[characterById.get(id)!.specId]?.name }} {{ CLASS_BY_ID[characterById.get(id)!.classId]?.name }}</span>
+                    </span>
+                    <span class="chip-role"><RoleIcon :role="characterById.get(id)!.role" /></span>
+                  </div>
+                  <div v-else class="empty-slot">Empty</div>
+                </li>
+              </ol>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section v-else-if="tab === 'roster'" class="public-roster panel">
         <h2>Guild player roster</h2>
+        <p class="muted">No raid has been saved yet.</p>
         <p v-if="!data.players.length" class="muted">The guild roster is empty.</p>
         <ul v-else class="player-grid">
           <li v-for="player in data.players" :key="player.id" :style="{ '--class-color': playerColor(player.id) }">
@@ -193,14 +266,44 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.public-page { max-width: 1180px; margin: 0 auto; padding: 24px clamp(12px, 3vw, 32px) 48px; display: grid; gap: 18px; }
-.public-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.public-page { max-width: 1480px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 32px) 48px; display: grid; gap: 16px; }
+.public-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: -4px; }
 .brand { display: flex; align-items: center; gap: 8px; color: var(--fog); font-family: var(--font-display); }
 .mark { color: var(--saronite); }
 .read-only, .round-label { color: var(--fog); font-size: .9rem; }
-.guild-title h1 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.4rem); }
-.guild-title p { margin: 2px 0 0; }
-.public-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--ice-ridge); padding-bottom: 8px; }
+.guild-title h1 { margin: 0 0 2px; font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
+.guild-title p { margin: 0; }
+.public-raid { display: grid; gap: 14px; }
+.raid-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+.raid-heading h2 { margin: 0; font-size: 1.5rem; }
+.size-tag { color: var(--fog); }
+.roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.roles li { display: flex; align-items: center; gap: 6px; }
+.roles .count { font-family: var(--font-display); font-size: 1.5rem; line-height: 1; }
+.roles .label { color: var(--fog); }
+.roles .target { font-size: .8rem; }
+.roles .low .count { color: var(--missing); }
+.roles .high .count { color: var(--partial); }
+.roles .total { margin-left: auto; }
+.raid-picker { display: flex; align-items: center; gap: 10px; color: var(--fog); }
+.raid-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 16px; align-items: start; }
+.groups { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.group, .bench { padding: 12px; }
+.group h3, .bench h3 { font-size: 1.05rem; margin: 0 0 8px; color: var(--frost); display: flex; justify-content: space-between; }
+.slots { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.chip { display: flex; align-items: stretch; min-height: 44px; background: var(--ice-deep); border-left: 4px solid var(--class-color); border-radius: var(--r-sm); }
+.chip-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 4px 8px; }
+.chip .name { color: var(--class-color); font-weight: 700; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip .spec { font-size: .8rem; color: var(--fog); line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-role { display: grid; place-items: center; padding: 0 8px; color: var(--fog); }
+.empty-slot { min-height: 44px; display: grid; place-items: center; border: 1px dashed var(--ice-ridge); border-radius: var(--r-sm); color: var(--fog); font-size: .85rem; }
+@media (max-width: 720px) {
+  .raid-layout { grid-template-columns: 1fr; }
+  .groups { order: -1; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+.public-tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid var(--ice-ridge); padding-bottom: 8px; }
+.public-tabs button { padding: 5px 11px; border-radius: var(--r-sm); background: transparent; color: var(--fog); }
+.public-tabs button:hover { color: var(--rime); background: var(--ice-ridge); }
 .public-tabs button.active { background: var(--frost); color: var(--ice-deep); font-weight: 700; }
 .public-roster { display: grid; gap: 12px; }
 .public-roster h2, .public-item h3 { margin: 0; font-size: 1.2rem; }

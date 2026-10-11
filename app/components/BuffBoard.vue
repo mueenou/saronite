@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { EffectCoverage } from '~/utils/coverage'
 
-const { coverage } = useRaid()
+const props = defineProps<{ coverage?: EffectCoverage[] }>()
+const raidCoverage = props.coverage ? null : useRaid().coverage
+const coverage = computed(() => props.coverage ?? raidCoverage?.value ?? [])
 
 const sections = computed(() => [
   { title: 'Buffs', items: coverage.value.filter(c => c.effect.kind === 'buff') },

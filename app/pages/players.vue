@@ -14,11 +14,11 @@ watch(() => membership.value?.guild.id, id => {
   <GuildAccess v-if="!configured || guildLoading || !user || !membership" />
   <main v-else-if="apiStatus === 'loading'" class="connecting" role="status">Loading {{ membership.guild.name }}’s roster…</main>
   <div v-else class="players-page">
-    <header class="page-header">
-      <div class="brand"><span class="mark" aria-hidden="true">◆</span><span>Saronite</span></div>
-      <GuildTools />
-    </header>
-    <GuildFeatureNav />
+    <AppHeader />
+    <div class="page-title">
+      <h1>Guild roster</h1>
+      <p class="muted">Players shared by the raid planner and the loot board.</p>
+    </div>
     <PublicRosterShare />
     <p v-if="apiStatus === 'offline'" class="connection-warning" role="status">
       Supabase unavailable. You may be seeing cached roster data.
@@ -29,10 +29,9 @@ watch(() => membership.value?.guild.id, id => {
 </template>
 
 <style scoped>
-.players-page { max-width: 1280px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 32px) 48px; display: grid; gap: 16px; }
+.players-page { max-width: 1480px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 32px) 48px; display: grid; gap: 16px; }
 .connecting { min-height: 100vh; display: grid; place-items: center; color: var(--fog); }
-.page-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
-.brand { display: flex; align-items: center; gap: 8px; color: var(--fog); font-family: var(--font-display); }
-.mark { color: var(--saronite); }
+.page-title h1 { margin: 0 0 2px; font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
+.page-title p { margin: 0; }
 .connection-warning { margin: 0; color: #f0b06d; }
 </style>

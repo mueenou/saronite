@@ -56,12 +56,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   </main>
   <div v-else class="page">
     <header class="top">
-      <div class="brand">
-        <span class="mark" aria-hidden="true">◆</span>
-        <span>Saronite</span>
-      </div>
-      <GuildTools />
-      <GuildFeatureNav />
+      <AppHeader />
 
       <div class="title-row">
         <label class="visually-hidden" for="raid-title">Raid name</label>
@@ -142,9 +137,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .page { max-width: 1480px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 32px) 48px; }
 .connecting { min-height: 100vh; display: grid; place-items: center; color: var(--fog); }
 
-.top { display: grid; gap: 14px; margin-bottom: 20px; }
-.brand { display: flex; align-items: center; gap: 8px; color: var(--fog); font-family: var(--font-display); }
-.mark { color: var(--saronite); }
+.top { display: grid; gap: 16px; margin-bottom: 20px; }
 
 .title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
 .raid-title {

@@ -187,14 +187,11 @@ const printSheet = ref<{ exportPdf: () => Promise<void> } | null>(null)
   <GuildAccess v-if="!configured || guildLoading || !user || !membership" />
   <main v-else-if="isLoading" class="loading" role="status">Loading the guild loot board…</main>
   <div v-else class="loot-page">
-    <header class="loot-header">
-      <div>
-        <h1>Loot attribution</h1>
-        <p class="muted">Round-based priority: a player who wins loot is skipped on other items until the next round.</p>
-      </div>
-      <GuildTools />
-    </header>
-    <GuildFeatureNav />
+    <AppHeader />
+    <div class="loot-header">
+      <h1>Loot attribution</h1>
+      <p class="muted">Round-based priority: a player who wins loot is skipped on other items until the next round.</p>
+    </div>
 
     <section class="board-bar panel">
       <div>
@@ -356,10 +353,9 @@ const printSheet = ref<{ exportPdf: () => Promise<void> } | null>(null)
 </template>
 
 <style scoped>
-.loot-page { max-width: 1200px; margin: 0 auto; padding: 24px clamp(12px, 3vw, 32px) 48px; display: grid; gap: 16px; }
+.loot-page { max-width: 1480px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 32px) 48px; display: grid; gap: 16px; }
 .loading { min-height: 100vh; display: grid; place-items: center; color: var(--fog); }
-.loot-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: start; }
-.loot-header h1 { margin: 8px 0 2px; font-size: clamp(1.8rem, 4vw, 2.5rem); }
+.loot-header h1 { margin: 0 0 2px; font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
 .loot-header p { margin: 0; }
 .board-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .board-bar h2 { font-size: 1.2rem; }
